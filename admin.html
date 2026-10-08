@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Master Admin Dashboard</title>
+<style>
+:root{
+  --bg:#08111f; --card:#101c2e; --card2:#14243a; --text:#f8fafc;
+  --muted:#94a3b8; --blue:#38bdf8; --green:#22c55e; --red:#fb7185;
+  --yellow:#fbbf24; --purple:#a78bfa; --border:#24364d;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; font-family:Segoe UI,Arial,sans-serif; color:var(--text);
+  background:radial-gradient(circle at top,#132a46 0,#08111f 48%,#050b14 100%);
+  min-height:100vh; padding:18px;
+}
+.container{max-width:1100px;margin:auto}
+.header{text-align:center;margin:8px 0 22px}
+.header h1{margin:0;color:var(--blue);font-size:30px}
+.header p{margin:7px 0;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.stat,.card{
+  background:rgba(16,28,46,.94); border:1px solid var(--border);
+  border-radius:16px; box-shadow:0 12px 30px rgba(0,0,0,.22);
+}
+.stat{padding:16px;text-align:center}
+.stat .num{font-size:27px;font-weight:800}
+.stat .label{color:var(--muted);font-size:13px;margin-top:4px}
+.card{padding:18px;margin-bottom:16px}
+.card h2{margin:0 0 14px;font-size:18px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+input,select{
+  width:100%;padding:12px;border-radius:10px;border:1px solid #31465f;
+  background:#07101d;color:white;outline:none
+}
+input:focus{border-color:var(--blue)}
+button{
+  border:0;border-radius:10px;padding:11px 15px;color:white;font-weight:700;
+  cursor:pointer;background:#0284c7;margin-top:10px
+}
+button:hover{filter:brightness(1.12)}
+.green{background:#16a34a}.red{background:#e11d48}.purple{background:#7c3aed}
+.yellow{background:#d97706}.gray{background:#475569}
+.maintenance{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:14px;border-radius:12px;background:#0a1422;border:1px solid var(--border)
+}
+.badge{padding:5px 9px;border-radius:999px;font-size:12px;font-weight:800}
+.active{background:#14532d;color:#86efac}.pending{background:#713f12;color:#fde68a}
+.blocked{background:#7f1d1d;color:#fecaca}
+.off{background:#334155;color:#cbd5e1}
+.on{background:#7f1d1d;color:#fecaca}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:900px}
+th,td{padding:10px;border-bottom:1px solid var(--border);text-align:left}
+th{background:#14243a;color:#cbd5e1}
+.small{font-size:12px;color:var(--muted)}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+.actions button{margin-top:0;padding:8px 10px}
+@media(max-width:700px){
+  .stats{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}
+  .header h1{font-size:24px}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>🚀 Master Admin Dashboard</h1>
+    <p>User Management • Maintenance • Broadcast • Redirect</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div id="total" class="num">0</div><div class="label">Total Users</div></div>
+    <div class="stat"><div id="pending" class="num">0</div><div class="label">Pending</div></div>
+    <div class="stat"><div id="active" class="num">0</div><div class="label">Active</div></div>
+    <div class="stat"><div id="blocked" class="num">0</div><div class="label">Blocked</div></div>
+  </div>
+
+  <div class="card">
+    <h2>🛠️ Maintenance Mode</h2>
+    <div class="maintenance">
+      <div>
+        <b id="maintText">Checking...</b>
+        <div class="small">ON होने पर user login के बाद आगे नहीं जाएगा।</div>
+      </div>
+      <button id="maintBtn" class="yellow" onclick="toggleMaintenance()">...</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>👤 Direct Active User बनाएं</h2>
+    <div class="grid2">
+      <input id="newName" placeholder="Name">
+      <input id="newMobile" placeholder="Mobile Number">
+      <input id="newEmail" placeholder="Email (optional)">
+      <input id="newUsername" placeholder="Username">
+      <input id="newPassword" placeholder="Password" type="password">
+    </div>
+    <button class="green" onclick="createUser()">+ Create Active User</button>
+  </div>
+
+  <div class="card">
+    <h2>👥 सभी Users / Registrations</h2>
+    <button class="gray" onclick="loadAll()">↻ Refresh</button>
+    <div class="table-wrap">
+      <table id="usersTable">
+        <thead>
+          <tr>
+            <th>ID</th><th>Name</th><th>Mobile</th><th>Username</th>
+            <th>Status</th><th>Device ID</th><th>Registered</th><th>Last Login</th><th>Action</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🔗 App Redirect Link</h2>
+    <input id="ytUrl" placeholder="https://example.com/...">
+    <button onclick="updateLink()">Save Redirect Link</button>
+  </div>
+
+  <div class="card">
+    <h2>📢 Broadcast Notification</h2>
+    <input id="broadcastMsg" placeholder="Sabhi App Users ko message...">
+    <button class="purple" onclick="sendBroadcast()">Send Broadcast</button>
+    <div class="small">FCM configure होने पर यही message फोन notification में भी जाएगा।</div>
+  </div>
+
+  <div class="card">
+    <h2>📄 Dynamic Page / Link</h2>
+    <div class="grid2">
+      <input id="pageTitle" placeholder="Page Title">
+      <input id="pageUrl" placeholder="Page URL / Content Link">
+    </div>
+    <button onclick="addPage()">Add New Page</button>
+  </div>
+
+</div>
+
+<script>
+async function api(url, options={}) {
+  const r = await fetch(url, options);
+  return await r.json();
+}
+
+async function loadStats(){
+  const s = await api('/api/admin/stats');
+  document.getElementById('total').textContent = s.total || 0;
+  document.getElementById('pending').textContent = s.pending || 0;
+  document.getElementById('active').textContent = s.active || 0;
+  document.getElementById('blocked').textContent = s.blocked || 0;
+}
+
+function badge(status){
+  const cls = status === 'active' ? 'active' : status === 'pending' ? 'pending' : 'blocked';
+  return `<span class="badge ${cls}">${String(status).toUpperCase()}</span>`;
+}
+
+async function loadAll(){
+  const users = await api('/api/admin/get-users');
+  const tbody = document.querySelector('#usersTable tbody');
+  tbody.innerHTML = '';
+
+  users.forEach(u => {
+    let actions = '';
+    if(u.status !== 'active')
+      actions += `<button class="green" onclick="setStatus(${u.id},'active')">Activate</button>`;
+    if(u.status !== 'blocked')
+      actions += `<button class="red" onclick="setStatus(${u.id},'blocked')">Block</button>`;
+    if(u.status === 'blocked')
+      actions += `<button class="green" onclick="setStatus(${u.id},'active')">Unblock</button>`;
+    if(u.status === 'active')
+      actions += `<button class="yellow" onclick="setStatus(${u.id},'pending')">Pending</button>`;
+
+    tbody.innerHTML += `
+      <tr>
+        <td>${u.id}</td>
+        <td>${escapeHtml(u.name || '-')}</td>
+        <td>${escapeHtml(u.mobile || '-')}</td>
+        <td>${escapeHtml(u.username)}</td>
+        <td>${badge(u.status)}</td>
+        <td>${escapeHtml(u.device_id || 'Not Logged In')}</td>
+        <td>${escapeHtml(u.created_at || '-')}</td>
+        <td>${escapeHtml(u.last_login || '-')}</td>
+        <td><div class="actions">${actions}</div></td>
+      </tr>`;
+  });
+  await loadStats();
+}
+
+async function setStatus(id,status){
+  const data = await api('/api/admin/update-status',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({id,status})
+  });
+  alert(data.message);
+  loadAll();
+}
+
+async function createUser(){
+  const body = {
+    name: document.getElementById('newName').value.trim(),
+    mobile: document.getElementById('newMobile').value.trim(),
+    email: document.getElementById('newEmail').value.trim(),
+    username: document.getElementById('newUsername').value.trim(),
+    password: document.getElementById('newPassword').value
+  };
+  if(!body.name || !body.mobile || !body.username || !body.password)
+    return alert('Name, Mobile, Username aur Password bharein.');
+
+  const data = await api('/api/admin/create-user',{
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)
+  });
+  alert(data.message);
+  if(data.success){
+    ['newName','newMobile','newEmail','newUsername','newPassword'].forEach(id=>document.getElementById(id).value='');
+    loadAll();
+  }
+}
+
+async function updateLink(){
+  const url = document.getElementById('ytUrl').value.trim();
+  if(!url) return alert('URL likhiye.');
+  const data = await api('/api/update-link',{
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})
+  });
+  alert(data.message);
+}
+
+async function sendBroadcast(){
+  const message = document.getElementById('broadcastMsg').value.trim();
+  if(!message) return alert('Broadcast message likhiye.');
+  const data = await api('/api/admin/broadcast',{
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message})
+  });
+  alert(data.message);
+  if(data.success) document.getElementById('broadcastMsg').value='';
+}
+
+async function addPage(){
+  const title=document.getElementById('pageTitle').value.trim();
+  const content_url=document.getElementById('pageUrl').value.trim();
+  if(!title || !content_url) return alert('Title aur URL dono bharein.');
+  const data=await api('/api/admin/add-page',{
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,content_url})
+  });
+  alert(data.message);
+}
+
+async function loadMaintenance(){
+  const data=await api('/api/admin/maintenance');
+  renderMaintenance(data.enabled);
+}
+
+function renderMaintenance(enabled){
+  document.getElementById('maintText').textContent = enabled ? '🔴 Maintenance ON' : '🟢 Maintenance OFF';
+  const btn=document.getElementById('maintBtn');
+  btn.textContent=enabled ? 'Turn OFF' : 'Turn ON';
+  btn.className=enabled ? 'green' : 'yellow';
+  btn.dataset.enabled=enabled ? '1':'0';
+}
+
+async function toggleMaintenance(){
+  const enabled=document.getElementById('maintBtn').dataset.enabled !== '1';
+  const data=await api('/api/admin/maintenance',{
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled})
+  });
+  alert(data.message);
+  renderMaintenance(enabled);
+}
+
+function escapeHtml(v){
+  return String(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+}
+
+async function init(){
+  await Promise.all([loadAll(),loadMaintenance()]);
+}
+init();
+</script>
+</body>
+</html>
